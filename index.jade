@@ -12,31 +12,41 @@
                   '    .curriculum_vitae = offsetof(PeterVaro, cv),\n' +
                   '    .stack_overflow   = offsetof(PeterVaro, so),\n' +
                   '    .git_hub          = offsetof(PeterVaro, gh),\n' +
-                  '};\n',
-        FOOT    = '/* peter varo, www.offsetof.com (C)2015 */\n',
+                  '};\n'
+        FOOT    = '/* C\'s offsetof() macro is an ANSI C library feature\n' +
+                  '   found in stddef.h. It evaluates to the offset (in\n'  +
+                  '   bytes) of a given member within a struct or union\n'  +
+                  '   type, an expression of type size_t. */',
         PATTERN = new RegExp(
             (/(\/\/.+?\n|\/\*(.|\n)+?\*\/)/gm).source + "|" + /* comment */
             (/((\.)([a-zA-Z_]\w+))/gm).source         + "|" + /* parameter */
             (/([a-zA-Z_]\w+(?=\())/gm).source         + "|" + /* function */
             (/(\b[A-Z_]\w+\b)/gm).source              + "|" + /* type */
             (/([,;()\[\]{}])/gm).source               + "|" + /* punctuation */
-            (/([.+-/*?!:~%^&|=<>])/gm).source);               /* operator */
+            (/([.+-/*?!:~%^&|=<>])/gm).source         + "|" + /* operator */
+            (/((?=\n+)(\s+)(?!\n+))/gm).source);              /* indentation */
 
     function makeSpan(name,
                       match)
     {
+        'use strict';
         return '<span class="lang-' + name + '">' + match + '</span>'
     }
     
     function makeA(name,
                    text)
     {
+        'use strict';
         return '<a target="_blank" href="' + LINKS[name] + '">' + text + '</a>';
     }
 
     function parse(text)
     {
-        var match,
+        'use strict';
+        var i,
+            match,
+            token,
+            spaces,
             processed = [];
         while ((match = PATTERN.exec(text)))
         {
@@ -55,6 +65,15 @@
                 token = makeSpan('punctuation', match[0]);
             else if (match[9])
                 token = makeSpan('operator', match[0]);
+            else if (match[10])
+            {
+                spaces = match[11].length;
+                token  = makeSpan('text', '\n');
+                for (i=0; i<Math.floor(spaces/4); i++)
+                    token += makeSpan('indentation', '    ');
+                for (i=1; i<spaces%4; i++)
+                    token += makeSpan('text', ' ');
+            }
 
             if (match.index)
                 processed.push(makeSpan('text', text.slice(0, match.index)));
@@ -80,3 +99,4 @@ html(lang='en')
             div
                 pre
                     code !{parse(BODY)}
+                    code !{parse(FOOT)}
