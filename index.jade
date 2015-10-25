@@ -1,0 +1,82 @@
+//- INFO --
+//- INFO --
+
+-
+    var LINKS   = {curriculum_vitae : 'https://8a16683400776f7ab924e88e01232' +
+                                      'be4f584221a.googledrive.com/host/0B75' +
+                                      'zuK6fBv7-cjVBaWYtdG42elU/extras/peter' +
+                                      '_varo_cv_sketch_and_prototype.pdf',
+                   stack_overflow   : 'http://stackoverflow.com/users/2188562',
+                   git_hub          : 'https://github.com/petervaro'},
+        BODY    = '{\n'                                                +
+                  '    .curriculum_vitae = offsetof(PeterVaro, cv),\n' +
+                  '    .stack_overflow   = offsetof(PeterVaro, so),\n' +
+                  '    .git_hub          = offsetof(PeterVaro, gh),\n' +
+                  '};\n',
+        FOOT    = '/* peter varo, www.offsetof.com (C)2015 */\n',
+        PATTERN = new RegExp(
+            (/(\/\/.+?\n|\/\*(.|\n)+?\*\/)/gm).source + "|" + /* comment */
+            (/((\.)([a-zA-Z_]\w+))/gm).source         + "|" + /* parameter */
+            (/([a-zA-Z_]\w+(?=\())/gm).source         + "|" + /* function */
+            (/(\b[A-Z_]\w+\b)/gm).source              + "|" + /* type */
+            (/([,;()\[\]{}])/gm).source               + "|" + /* punctuation */
+            (/([.+-/*?!:~%^&|=<>])/gm).source);               /* operator */
+
+    function makeSpan(name,
+                      match)
+    {
+        return '<span class="lang-' + name + '">' + match + '</span>'
+    }
+    
+    function makeA(name,
+                   text)
+    {
+        return '<a target="_blank" href="' + LINKS[name] + '">' + text + '</a>';
+    }
+
+    function parse(text)
+    {
+        var match,
+            processed = [];
+        while ((match = PATTERN.exec(text)))
+        {
+            if (match[1])
+                token = makeSpan('comment', match[0]);
+            else if (match[3])
+            {
+                token = makeSpan('operator', match[4]) +
+                        makeA(match[5], makeSpan('parameter', match[5]));
+            }
+            else if (match[6])
+                token = makeSpan('function', match[0]);
+            else if (match[7])
+                token = makeSpan('type', match[0]);
+            else if (match[8])
+                token = makeSpan('punctuation', match[0]);
+            else if (match[9])
+                token = makeSpan('operator', match[0]);
+
+            if (match.index)
+                processed.push(makeSpan('text', text.slice(0, match.index)));
+            processed.push(token);
+            text = text.slice(match.index + match[0].length);
+        }
+        processed.push(makeSpan('text', text));
+        return processed.join('');
+    }
+
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - //
+doctype html
+html(lang='en')
+    head
+        meta(charset='utf-8')
+        title Peter Varo | offsetof()
+        link(rel  = 'stylesheet'
+             type = 'text/css'
+             href = 'css/index.css')
+    body
+        div
+            div
+                pre
+                    code !{parse(BODY)}
